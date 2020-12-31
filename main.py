@@ -1,7 +1,9 @@
+# Kruskal's algorithm in Python
 
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from PIL import Image
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -30,7 +32,16 @@ def cameraInput(model):
         # frame is the image
         cv2.imshow("SAMSAN TECH", frame)
         #TODO: MODEL.PREDICT(IMAGE) predict image shown
-        labelText= 'Prediction'
+        
+        im = Image.fromarray(frame, 'RGB')
+        im = im.resize((32,32))
+        img_array = np.array(im)
+        img_array = np.expand_dims(img_array, axis = 0)
+        
+        labelText = str(model.predict(img_array)[0])
+        print(labelText)
+
+        #labelText= 'Prediction'
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(frame,
                     labelText,

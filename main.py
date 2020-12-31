@@ -1,4 +1,3 @@
-# Kruskal's algorithm in Python
 
 import tensorflow as tf
 from tensorflow import keras

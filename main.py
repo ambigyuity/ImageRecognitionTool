@@ -30,7 +30,7 @@ def cameraInput(model):
     while rval:
         # frame is the image
         cv2.imshow("SAMSAN TECH", frame)
-        #predict image shown
+        #TODO: MODEL.PREDICT(IMAGE) predict image shown
         labelText= 'Prediction'
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(frame,

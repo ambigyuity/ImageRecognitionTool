@@ -2,6 +2,7 @@
 
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,6 +29,17 @@ def cameraInput(model):
     print(rval)
     while rval:
         # frame is the image
+        cv2.imshow("SAMSAN TECH", frame)
+        #predict image shown
+        labelText= 'Prediction'
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(frame,
+                    labelText,
+                    (50, 50),
+                    font, 1,
+                    (0, 255, 255),
+                    2,
+                    cv2.LINE_4)
         cv2.imshow("SAMSAN TECH", frame)
         rval, frame = vc.read()
         key = cv2.waitKey(20)
@@ -65,11 +77,15 @@ def main():
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
 
-    history= model.fit(train_images, train_labels, epochs=100, callbacks=[callbacks])
+
+    #data_generator= ImageDataGenerator()
+
+
+    history= model.fit(train_images, train_labels, epochs=20, callbacks=[callbacks])
 
     model.evaluate(test_images, test_labels)
 
-    #cameraInput(model)
+    cameraInput(model)
 
 
 if __name__== "__main__":

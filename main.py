@@ -38,13 +38,40 @@ def cameraInput(model):
         img_array = np.array(im)
         img_array = np.expand_dims(img_array, axis = 0)
         
-        labelText = str(model.predict(img_array)[0])
-        print(labelText)
+        #Change labelText to predictionArray or something
+        labelText = model.predict(img_array)[0] 
+        predictiontext = ""
+        
+        #Verify class assignments. Currently it is set alphabetically
+        if labelText[0] == 1:
+            predictiontext = "airplane"
+        elif labelText[1] == 1: 
+            predictiontext = "automobile"
+        elif labelText[2] == 1: 
+            predictiontext = "bird"
+        elif labelText[3] == 1: 
+            predictiontext = "cat"     
+        elif labelText[4] == 1: 
+            predictiontext = "deer"
+        elif labelText[5] == 1: 
+            predictiontext = "dog"
+        elif labelText[6] == 1: 
+            predictiontext = "frog"
+        elif labelText[7] == 1: 
+            predictiontext = "horse" 
+        elif labelText[8] == 1: 
+            predictiontext = "ship"
+        elif labelText[9] == 1: 
+            predictiontext = "truck"
+        else:
+            predictiontext = None
+
+        
 
         #labelText= 'Prediction'
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(frame,
-                    labelText,
+                    predictiontext,
                     (50, 50),
                     font, 1,
                     (0, 255, 255),
@@ -92,7 +119,7 @@ def main():
     #TODO: IMPORT IMAGES FROM ZIP AND ALL THAT JAZZ 
 
     #TODO: DATA AUGMENTATION 
-    history= model.fit(train_images, train_labels, epochs=20, callbacks=[callbacks])
+    history= model.fit(train_images, train_labels, epochs=1, callbacks=[callbacks])
 
     model.evaluate(test_images, test_labels)
 

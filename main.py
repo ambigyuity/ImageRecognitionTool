@@ -1,4 +1,3 @@
-#
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -89,6 +88,11 @@ def cameraInput(model):
 
 def main():
     callbacks = myCallback()
+    #Get your dataset
+    #Create a Model
+    #Compile Model
+    #Fit your Model
+    #Evaluation/Prediction
     cifar10 = keras.datasets.cifar10
     (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
 
@@ -108,17 +112,18 @@ def main():
             keras.layers.Dropout(0.2),
             keras.layers.BatchNormalization(),
             keras.layers.Conv2D(128, (3, 3), activation='relu'),
+            keras.layers.MaxPooling2D(2, 2),
             keras.layers.Dropout(0.2),
             keras.layers.BatchNormalization(),
             keras.layers.Flatten(),
-            keras.layers.Dense(256, activation='relu'),
-            keras.layers.Dense(10, activation='softmax')
+            keras.layers.Dense(1024, activation='relu'), #hidden layer.
+            keras.layers.Dense(10, activation='softmax') #classification layer
         ]
     )
 
     model.summary()
 
-    model.compile(optimizer=tf.optimizers.Adam(),
+    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=0.0001),
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
 
@@ -126,7 +131,9 @@ def main():
     # TODO: IMPORT IMAGES FROM ZIP AND ALL THAT JAZZ
 
     # TODO: DATA AUGMENTATION
+
     history = model.fit(train_images, train_labels, epochs=20, callbacks=[callbacks])
+
 
     model.evaluate(test_images, test_labels)
 

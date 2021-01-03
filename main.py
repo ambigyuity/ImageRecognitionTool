@@ -1,23 +1,58 @@
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from PIL import Image
+from tensorflow.keras.applications.resnet50 import ResNet50
+import urllib.request
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
+from PIL import Image
+
+# weights_url = "https://storage.googleapis.com/mledu-datasets/inception_v3_weights_tf_dim_ordering_tf_kernels_notop.h5"
+# weights_file = "inception_v3.h5"
+# urllib.request.urlretrieve(weights_url, weights_file)
+
+def preprocess_image_input(input_images):
+  input_images = input_images.astype('float32')
+  output_ims = tf.keras.applications.resnet50.preprocess_input(input_images)
+  return output_ims
+
+def feature_extractor(inputs):
+    feature_extractor = tf.keras.applications.resnet.ResNet50(input_shape=(224, 224, 3),
+                                                              include_top=False,
+                                                              weights='imagenet')(inputs)
+    return feature_extractor
+
+def classifier(inputs):
+    x = tf.keras.layers.GlobalAveragePooling2D()(inputs)
+    x = tf.keras.layers.Flatten()(x)
+    x = tf.keras.layers.Dense(1024, activation="relu")(x)
+    x = tf.keras.layers.Dense(512, activation="relu")(x)
+    x = tf.keras.layers.Dense(10, activation="softmax", name="classification")(x)
+    return x
 
 
-# TF_VERSION= tf.version.VERSION
-# print(TF_VERSION)
+def final_model(inputs):
+    resize = tf.keras.layers.UpSampling2D(size=(7, 7))(inputs)
 
-class myCallback(tf.keras.callbacks.Callback):
-    def on_epoch_end(self, epoch, logs={}):
-        if (logs.get('accuracy') > 0.95):
-            print("\n Reached 95% accuracy! Discontinue training!")
-            self.model.stop_training = True
+    resnet_feature_extractor = feature_extractor(resize)
+    classification_output = classifier(resnet_feature_extractor)
+
+    return classification_output
 
 
-def cameraInput(model):
+def define_compile_model():
+    inputs = tf.keras.layers.Input(shape=(32, 32, 3))
+
+    classification_output = final_model(inputs)
+    model = tf.keras.Model(inputs=inputs, outputs=classification_output)
+
+    model.compile(optimizer='SGD',
+                  loss='sparse_categorical_crossentropy',
+                  metrics=['accuracy'])
+
+    return model
+
+def cameraInput(model,classes):
     cv2.namedWindow("SAMSAN TECH")
     vc = cv2.VideoCapture(0, cv2.CAP_DSHOW)
     print(vc)
@@ -34,39 +69,47 @@ def cameraInput(model):
         # TODO: MODEL.PREDICT(IMAGE) predict image shown
 
         im = Image.fromarray(frame, 'RGB')
-        im = im.resize((32, 32))
+        im = im.resize((32,32))
         img_array = np.array(im)
         img_array = np.expand_dims(img_array, axis=0)
 
         # Change labelText to predictionArray or something
         labelText = model.predict(img_array)[0]
+        Prediction= np.argmax(labelText)
+        #print(Prediction)
         predictiontext = ""
 
         # Verify class assignments. Currently it is set alphabetically
-        if labelText[0] == 1:
-            predictiontext = "airplane"
-        elif labelText[1] == 1:
-            predictiontext = "automobile"
-        elif labelText[2] == 1:
-            predictiontext = "bird"
-        elif labelText[3] == 1:
-            predictiontext = "cat"
-        elif labelText[4] == 1:
-            predictiontext = "deer"
-        elif labelText[5] == 1:
-            predictiontext = "dog"
-        elif labelText[6] == 1:
-            predictiontext = "frog"
-        elif labelText[7] == 1:
-            predictiontext = "horse"
-        elif labelText[8] == 1:
-            predictiontext = "ship"
-        elif labelText[9] == 1:
-            predictiontext = "truck"
-        else:
-            predictiontext = None
 
+        #print(labelText)
+        labelText=Prediction
+
+        predictiontext= classes[labelText]
+
+        # if labelText ==  0:
+        #     predictiontext = "airplane"
+        # elif labelText == 1:
+        #     predictiontext = "automobile"
+        # elif labelText==2:
+        #     predictiontext = "bird"
+        # elif labelText==3:
+        #     predictiontext = "cat"
+        # elif labelText==4:
+        #     predictiontext = "deer"
+        # elif labelText==5:
+        #     predictiontext = "dog"
+        # elif labelText==6:
+        #     predictiontext = "frog"
+        # elif labelText==7:
+        #     predictiontext = "horse"
+        # elif labelText==8:
+        #     predictiontext = "ship"
+        # elif labelText==9:
+        #     predictiontext = "truck"
+        # else:
+        #     predictiontext = None
         # labelText= 'Prediction'
+
         font = cv2.FONT_HERSHEY_SIMPLEX
         cv2.putText(frame,
                     predictiontext,
@@ -86,60 +129,21 @@ def cameraInput(model):
     model.summary()
 
 
-def main():
-    callbacks = myCallback()
-    #Get your dataset
-    #Create a Model
-    #Compile Model
-    #Fit your Model
-    #Evaluation/Prediction
-    cifar10 = keras.datasets.cifar10
-    (train_images, train_labels), (test_images, test_labels) = cifar10.load_data()
 
-    train_images = train_images.reshape(50000, 32, 32, 3)
-    test_images = test_images.reshape(10000, 32, 32, 3)
-    train_images, test_images = train_images / 255.0, test_images / 255.0
+BATCH_SIZE = 32
+classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
-    model = keras.Sequential(
-        [
-            # keras.layers.Conv2d(FILTERS, FILTER DIMENSION(3,3), ACTIVATION, INPUTSHAPE)
-            # keras.layers.MaxPooling2D(POOLSIZEX, POOLSIZEY)
-            keras.layers.Conv2D(64, (3, 3), activation='relu', input_shape=(32, 32, 3)),
-            keras.layers.MaxPooling2D(2, 2),
-            keras.layers.Dropout(0.2),
-            keras.layers.BatchNormalization(),
-            keras.layers.Conv2D(96, (3, 3), activation='relu'),
-            keras.layers.Dropout(0.2),
-            keras.layers.BatchNormalization(),
-            keras.layers.Conv2D(128, (3, 3), activation='relu'),
-            keras.layers.MaxPooling2D(2, 2),
-            keras.layers.Dropout(0.2),
-            keras.layers.BatchNormalization(),
-            keras.layers.Flatten(),
-            keras.layers.Dense(1024, activation='relu'), #hidden layer.
-            keras.layers.Dense(10, activation='softmax') #classification layer
-        ]
-    )
+(training_images, training_labels) , (validation_images, validation_labels) = tf.keras.datasets.cifar10.load_data()
+train_X = preprocess_image_input(training_images)
+valid_X = preprocess_image_input(validation_images)
 
-    model.summary()
+model = define_compile_model()
 
-    model.compile(optimizer=tf.keras.optimizers.RMSprop(lr=0.0001),
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
+model.summary()
 
-    # data_generator= ImageDataGenerator()
-    # TODO: IMPORT IMAGES FROM ZIP AND ALL THAT JAZZ
+EPOCHS=1
+history = model.fit(train_X, training_labels, epochs=EPOCHS, validation_data = (valid_X, validation_labels), batch_size=64)
 
-    # TODO: DATA AUGMENTATION
+loss, accuracy = model.evaluate(valid_X, validation_labels, batch_size=64)
 
-    history = model.fit(train_images, train_labels, epochs=20, callbacks=[callbacks])
-
-
-    model.evaluate(test_images, test_labels)
-
-    cameraInput(model)
-
-
-if __name__ == "__main__":
-    main()
-
+cameraInput(model, classes)
